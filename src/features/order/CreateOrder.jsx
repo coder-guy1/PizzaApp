@@ -16,10 +16,7 @@ const isValidPhone = (str) =>
   );
 
 function CreateOrder() {
-  // const [withPriority, setWithPriority] = useState(false);
-
   const [withPriority, setWithPriority] = useState(false);
-
   const {
     username,
     status: addressStatus,
@@ -27,16 +24,21 @@ function CreateOrder() {
     address,
     error: errorAddress,
   } = useSelector((state) => state.user);
-  const isLoadingAddress = address === "loading";
+  const isLoadingAddress = addressStatus === "loading";
+
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+
   const formErrors = useActionData();
   const dispatch = useDispatch();
+
   const cart = useSelector(getCart);
   const totalCartPrice = useSelector(getTotalCartPrice);
   const priorityPrice = withPriority ? totalCartPrice * 0.2 : 0;
   const totalPrice = totalCartPrice + priorityPrice;
+
   if (!cart.length) return <EmptyCart />;
+
   return (
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">Ready to order? Lets go!</h2>
@@ -65,6 +67,7 @@ function CreateOrder() {
             )}
           </div>
         </div>
+
         <div className="relative mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">Address</label>
           <div className="grow">
@@ -137,19 +140,28 @@ function CreateOrder() {
 }
 
 export async function action({ request }) {
-  const formdata = await request.formdata();
-  const data = Object.fromEntries(formdata);
+  const formData = await request.formData();
+  const data = Object.fromEntries(formData);
+
   const order = {
     ...data,
     cart: JSON.parse(data.cart),
-    priority: data.priority === "on",
+    priority: data.priority === "true",
   };
+
+  console.log(order);
+
   const errors = {};
   if (!isValidPhone(order.phone))
     errors.phone =
       "Please give us your correct phone number. We might need it to contact you.";
+
   if (Object.keys(errors).length > 0) return errors;
+
+  // If everything is okay, create new order and redirect
   const newOrder = await createOrder(order);
+
+  // Do NOT overuse
   store.dispatch(clearCart());
 
   return redirect(`/order/${newOrder.id}`);
